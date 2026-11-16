@@ -58,7 +58,6 @@ document.getElementById('forAjoute').addEventListener('submit', (event) => {
         errors.push('La description doit contenir entre 20 et 1 000 caractères.')
     }
 
-    // Validation de l'auteur
     if (!/^[a-zA-Z]+(\s+[a-zA-Z]+)+$/.test(auteur)) {
         errors.push('L’auteur doit être un nom complet contenant au moins deux parties.')
     }
