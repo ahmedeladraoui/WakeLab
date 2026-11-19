@@ -104,7 +104,7 @@ function rechrchParThem(data) {
 
 async function ajouterActivites(url, data) {
     await axios.post(url, data)
-        .then(res => window.alert('ajouter avec success!', res))
+        .then(res => swal("Ajouter avec succes", "", "success"))
         .catch(err => console.error('il y a un erreru: ', err.message))
 }
 
@@ -157,14 +157,14 @@ async function modifierActivite() {
             oldData.description !== donnees.description ||
             oldData.duree !== donnees.duree
         ) {
-            await axios.put(`${url}/${id}`, {...oldData, ...donnees})
+            await axios.put(`${url}/${id}`, { ...oldData, ...donnees })
 
         } else {
-            alert('aucune modification!')
+            swal("aucune modification!", "", "warning");
             return
         }
 
-        alert('modification avec success!')
+        swal("Modifier avec succes", "", "success");
         formAjoute.reset()
         formAjoute.checkId.value = ''
         await getData(url)
@@ -175,17 +175,27 @@ async function modifierActivite() {
 }
 
 
-async function supprimerActivite(event) {
+function supprimerActivite(event) {
     console.log('clicked')
 
-    let idActivite = Number(event.target.dataset.idActivite)
-    console.log(idActivite)
-    let activiteFound = activites.find(element => element.id === idActivite)
-    console.log(activiteFound)
-    if (activiteFound) {
-        await axios.delete(`${url}/${idActivite}`).catch(err => console.error("il y a un erreur: ", err.message))
-        await getData(url)
-    }
+    swal({
+        title: "Êtes-vous sûr ?",
+        text: "Voulez-vous vraiment modifier cette activité ?",
+        icon: "warning",
+        buttons: ["Annuler", "Confirmer"],
+        dangerMode: true
+    }).then(async (confirmed) => {
+        if (confirmed) {
+            let idActivite = Number(event.target.dataset.idActivite)
+            console.log(idActivite)
+            let activiteFound = activites.find(element => element.id === idActivite)
+            console.log(activiteFound)
+            if (activiteFound) {
+                await axios.delete(`${url}/${idActivite}`).catch(err => console.error("il y a un erreur: ", err.message))
+                await getData(url)
+            }
+        }
+    });
 
 }
 
