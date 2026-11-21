@@ -50,7 +50,6 @@ function setNom() {
 editNom.addEventListener('click', () => {
     console.log('clicked')
     divAjouterNom.classList.remove('hidden')
-    setNom()
 })
 
 
@@ -103,13 +102,14 @@ function rechrchParThem(data) {
 }
 
 async function ajouterActivites(url, data) {
-    await axios.post(url, data)
-        .then(res => swal("Ajouter avec succes", "", "success"))
-        .catch(err => console.error('il y a un erreru: ', err.message))
+    try {
+        await axios.post(url, data);
+        swal("ajouter avec succes", "", "success")
+        await getData(url)
+    } catch (err) {
+        console.error('il y a un erreur: ', err.message)
+    }
 }
-
-
-
 
 function remplireFormModifier(event) {
     let idActivite = Number(event.target.dataset.idActivite)
@@ -180,7 +180,7 @@ function supprimerActivite(event) {
 
     swal({
         title: "Êtes-vous sûr ?",
-        text: "Voulez-vous vraiment modifier cette activité ?",
+        text: "Voulez-vous vraiment modifier cette activte ?",
         icon: "warning",
         buttons: ["Annuler", "Confirmer"],
         dangerMode: true
@@ -235,15 +235,14 @@ function validerFormulaire() {
         let ul = document.createElement('ul')
         ul.className = 'list-disc pl-5 space-y-1'
 
-        errors.forEach(e => {
+        errors.forEach(error => {
             let li = document.createElement('li')
-            li.textContent = e
+            li.textContent = error
             ul.append(li)
         })
         errorDiv.textContent = ''
         errorDiv.append(ul)
         errorDiv.classList.remove('hidden')
-        errorDiv.classList.add('block')
         return false
     }
 
@@ -253,7 +252,7 @@ function validerFormulaire() {
     return true
 }
 
-document.getElementById('forAjoute').addEventListener('submit', (event) => {
+document.getElementById('forAjoute').addEventListener('submit', async (event) => {
     event.preventDefault()
 
     if (!validerFormulaire()) {
@@ -277,8 +276,7 @@ document.getElementById('forAjoute').addEventListener('submit', (event) => {
             objectifs: objectifs
         }
 
-        ajouterActivites(url, JSON.stringify(newActivite))
-        getData(url)
+        await ajouterActivites(url, newActivite)
         formAjoute.reset()
         formAjoute.checkId.value = ''
 
