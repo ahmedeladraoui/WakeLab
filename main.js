@@ -4,17 +4,18 @@ const formAjoute = document.forms.forAjoute
 const formNom = document.forms.formNom
 const divAjouterNom = document.getElementById('formAjouterNom')
 let nomAuteur = localStorage.getItem('nom')
-let editNom = document.getElementById('editNom')
 let activites = []
 
-async function getData(url) {
-    const res = await axios.get(url)
-    const data = await res.data
-    activites = data
-    console.log(data)
-    afficherDat(data)
-    rechrcherActivite(data)
-    rechrchParThem(data)
+const  getData = async (url) =>{
+    try {
+        const res = await axios.get(url)
+        const data = await res.data
+        activites = data
+        console.log(data)
+        afficherDat(data)
+        rechrcherActivite(data)
+        rechrchParThem()
+    } catch { err => console.error('il y a un erreur: ', err.message) }
 }
 getData(url)
 
@@ -28,32 +29,35 @@ if (nomAuteur !== null) {
     divAjouterNom.classList.remove('hidden')
     setNom()
 }
-
-function setNom() {
-    formNom.addEventListener('submit', event => {
-        event.preventDefault()
-
-        const nom = formNom.nom.value
-
-        if (!/^[a-zA-Z]+(\s+[a-zA-Z]+)+$/.test(nom)) {
-            document.getElementById('errorNom').textContent = 'L’auteur doit être un nom complet contenant au moins deux parties.'
-            return
-        }
-        localStorage.setItem('nom', nom)
-        nomAuteur = localStorage.getItem('nom')
-        divAjouterNom.classList.add('hidden')
-        document.getElementById('nomAuteur').textContent = nom
-    })
+const setNom = () =>{
+    const nom = formNom.nom.value
+    console.log(nom)
+    if (!/^[a-zA-Z]+(\s+[a-zA-Z]+)+$/.test(nom)) {
+        document.getElementById('errorNom').classList.remove('hidden')
+        document.getElementById('errorNom').textContent = 'L’auteur doit être un nom complet contenant au moins deux parties.'
+        return
+    }
+    document.getElementById('errorNom').classList.add('hidden')
+    localStorage.setItem('nom', nom)
+    nomAuteur = localStorage.getItem('nom')
+    divAjouterNom.classList.add('hidden')
+    document.getElementById('nomAuteur').textContent = nom
 }
 
-
-editNom.addEventListener('click', () => {
-    console.log('clicked')
-    divAjouterNom.classList.remove('hidden')
+document.body.addEventListener('click', event => {
+    if (event.target.classList.contains('setNom')) {
+        event.preventDefault()
+        setNom()
+    }
+    else if (event.target.classList.contains('editNom')) divAjouterNom.classList.remove('hidden')
+    else if (event.target.classList.contains('btnSupprimer')) supprimerActivite(event, activites)
+    else if (event.target.classList.contains('btnModifier')) remplireFormModifier(event, activites)
 })
 
 
-function activiteNotFound() {
+
+
+const activiteNotFound = ()=> {
     cardsContainer.textContent = ''
     let p = document.createElement('p')
     p.className = 'text-red-600 text-2xl'
@@ -61,7 +65,7 @@ function activiteNotFound() {
     cardsContainer.append(p)
 }
 
-function afficherDat(data) {
+const  afficherDat = (data)=> {
     cardsContainer.textContent = ''
     if (data.length > 0) {
         data.forEach(element => {
@@ -72,36 +76,41 @@ function afficherDat(data) {
     activiteNotFound()
 }
 
-function rechrcherActivite(data) {
-    document.getElementById("rechrcher").addEventListener('input', event => {
-        let vlaueInput = event.target.value.toLowerCase()
-        let activiteFound = data.filter(element => element.titre.toLowerCase().includes(vlaueInput))
-        console.log(activiteFound)
-        if (activiteFound.length > 0) {
-            afficherDat(activiteFound)
-            return
-        }
-        if (vlaueInput == '') {
-            afficherDat(data)
-            return
-        }
-        activiteNotFound()
-    })
+
+const callBackRechrcheActivite = (event, data)=> {
+    let vlaueInput = event.target.value.toLowerCase()
+    let activiteFound = data.filter(element => element.titre.toLowerCase().includes(vlaueInput))
+    console.log(activiteFound)
+    if (activiteFound.length > 0) {
+        afficherDat(activiteFound)
+        return
+    }
+    if (vlaueInput == '') {
+        afficherDat(data)
+        return
+    }
+    activiteNotFound()
+}
+const rechrcherActivite = (data)=> {
+    document.getElementById("rechrcher").addEventListener('input', event => callBackRechrcheActivite(event, data))
 }
 
 
-function rechrchParThem(data) {
-    document.getElementById('rechrcehThem').addEventListener('input', async (event) => {
+const  callBackRecherchThem = async(event) =>{
+    try {
         let valueSelect = event.target.value.toLowerCase()
-        let activiteFound = await axios.get(`${url}?theme=${valueSelect}`).catch(err => console.error('Il y a un erreur: ', err))
+        let activiteFound = await axios.get(`${url}?theme=${valueSelect}`)
         console.log(activiteFound)
         if (activiteFound) {
             afficherDat(activiteFound.data)
         }
-    })
+    }catch (err){console.error('il y a un erreur: ',err.message)}
+}
+const rechrchParThem = () =>{
+    document.getElementById('rechrcehThem').addEventListener('change', (event) => callBackRecherchThem(event))
 }
 
-async function ajouterActivites(url, data) {
+const  ajouterActivites = async(url, data) =>{
     try {
         await axios.post(url, data);
         swal("ajouter avec succes", "", "success")
@@ -111,7 +120,7 @@ async function ajouterActivites(url, data) {
     }
 }
 
-function remplireFormModifier(event) {
+const remplireFormModifier = (event)=> {
     let idActivite = Number(event.target.dataset.idActivite)
 
     let activiteFound = activites.find(element => element.id === idActivite)
@@ -126,7 +135,7 @@ function remplireFormModifier(event) {
     }
 }
 
-async function modifierActivite() {
+const  modifierActivite = async()=> {
     const id = formAjoute.checkId.value
     let oldData = activites.find(element => element.id == id)
 
@@ -161,13 +170,15 @@ async function modifierActivite() {
 
         } else {
             swal("aucune modification!", "", "warning");
+            console.log('jjjjjjj')
+            window.alert('aucun modification!')
             return
         }
 
         swal("Modifier avec succes", "", "success");
         formAjoute.reset()
         formAjoute.checkId.value = ''
-        await getData(url)
+        getData(url)
 
     } catch (err) {
         console.error("il y a une erreur: ", err.message)
@@ -175,12 +186,12 @@ async function modifierActivite() {
 }
 
 
-function supprimerActivite(event) {
+const supprimerActivite = (event)=> {
     console.log('clicked')
 
     swal({
         title: "Êtes-vous sûr ?",
-        text: "Voulez-vous vraiment modifier cette activte ?",
+        text: "Voulez-vous vraiment supprimer cette activte ?",
         icon: "warning",
         buttons: ["Annuler", "Confirmer"],
         dangerMode: true
@@ -199,7 +210,7 @@ function supprimerActivite(event) {
 
 }
 
-function validerFormulaire() {
+const validerFormulaire = () =>{
     const duree = Number(formAjoute.duree.value.trim())
     const theme = formAjoute.theme.value.trim()
     const titre = formAjoute.titre.value.trim()
@@ -252,7 +263,7 @@ function validerFormulaire() {
     return true
 }
 
-document.getElementById('forAjoute').addEventListener('submit', async (event) => {
+document.getElementById('forAjoute').addEventListener('submit', (event) => {
     event.preventDefault()
 
     if (!validerFormulaire()) {
@@ -276,7 +287,7 @@ document.getElementById('forAjoute').addEventListener('submit', async (event) =>
             objectifs: objectifs
         }
 
-        await ajouterActivites(url, newActivite)
+        ajouterActivites(url, newActivite)
         formAjoute.reset()
         formAjoute.checkId.value = ''
 
@@ -286,15 +297,8 @@ document.getElementById('forAjoute').addEventListener('submit', async (event) =>
 })
 
 
-cardsContainer.addEventListener('click', event => {
-    if (event.target.classList.contains('btnSupprimer')) supprimerActivite(event, activites)
-    if (event.target.classList.contains('btnModifier')) remplireFormModifier(event, activites)
-})
 
-
-
-
-function divCard(data) {
+const  divCard = (data)=> {
 
     let article = document.createElement('article')
     article.className = 'ativiteContainer w-full rounded-xl border border-stone-200 bg-white p-4 transition-colors hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-700'
